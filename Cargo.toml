@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 injective-cosmwasm = "0.2.21"
 injective-std = "0.1.5"
+serde = { version = "1.0", features = ["derive"] }

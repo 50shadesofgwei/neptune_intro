@@ -1,8 +1,9 @@
 use reqwest::{self, Client, Response};
 use serde::Deserialize;
-use std::{error::Error};
+use std::error::Error;
 use dotenv::dotenv;
 use std::env;
+use crate::utils::api_error_handling_utils::{is_valid_api_response, ApiError};
 use crate::utils::global_types::AssetToSellData;
 use super::{zero_ex_utils::ZERO_EX_API_ADDRESS, zero_ex_types::ZeroExAPIResponseData};
 
@@ -30,7 +31,11 @@ impl ZeroExQuoter {
         &self,
         asset_data: AssetToSellData,
     ) -> Result<ZeroExAPIResponseData, Box<dyn Error>> {
-        let client: Client = Client::new();
+        let client: Client = Client::builder()
+            .danger_accept_invalid_certs(true) 
+            .build()
+            .map_err(ApiError::from)?;
+
         let res: Response = client
             .get(ZERO_EX_API_ADDRESS)
             .query(&[
@@ -41,15 +46,11 @@ impl ZeroExQuoter {
             .header("0x-api-key", &self.api_key)
             .send()
             .await
-            .map_err(|e| format!("Network error: {}", e))?;
+            .map_err(ApiError::from)?;
 
-        if !res.status().is_success() {
-            let error_message: String = res.text().await.unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(format!("Error response from ZeroEx API: {}", error_message).into());
-        }
-
+        let res: Response = is_valid_api_response(res).await?;
         let zero_ex_api_response: ZeroExAPIResponseData = res.json::<ZeroExAPIResponseData>().await
-            .map_err(|e| format!("Error deserializing response: {}", e))?;
+            .map_err(|e| ApiError::from(format!("Error deserializing response: {}", e)))?;
 
         Ok(zero_ex_api_response)
     }

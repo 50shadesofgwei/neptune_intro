@@ -51,5 +51,5 @@ impl ZeroExQuoter {
         Ok(zero_ex_api_response)
     }
     
-    }
+}
 

@@ -4,7 +4,7 @@ use std::error::Error;
 use dotenv::dotenv;
 use std::env;
 use crate::utils::api_error_handling_utils::{is_valid_api_response, ApiError};
-use crate::utils::global_types::AssetToSellData;
+use crate::utils::global_types::{AssetToSellData, TxData};
 use crate::utils::global_utils::deserialize_json_response;
 use super::{zero_ex_utils::ZERO_EX_API_ADDRESS, zero_ex_types::ZeroExAPIResponseData};
 
@@ -28,7 +28,17 @@ impl ZeroExQuoter {
         })
     }
 
-    pub async fn get_zero_ex_quote_from_asset_data(
+    pub async fn get_tx_data_from_asset_data(
+        &self,
+        asset_data: AssetToSellData,
+    ) -> Result<TxData, Box<dyn Error>> {
+        let quote: ZeroExAPIResponseData = self.get_zero_ex_quote_from_asset_data(asset_data).await?;
+        let tx_data: TxData = self.get_tx_data_from_api_response(quote);
+        
+        Ok(tx_data)
+    }
+
+    async fn get_zero_ex_quote_from_asset_data(
         &self,
         asset_data: AssetToSellData,
     ) -> Result<ZeroExAPIResponseData, Box<dyn Error>> {
@@ -49,6 +59,17 @@ impl ZeroExQuoter {
         let zero_ex_api_response: ZeroExAPIResponseData = deserialize_json_response(validated_response).await?;
     
         Ok(zero_ex_api_response)
+    }
+    
+    fn get_tx_data_from_api_response(
+        &self,
+        response_data: ZeroExAPIResponseData
+    ) -> TxData {
+        TxData {
+            to: response_data.to,
+            value: response_data.value,
+            data: response_data.data,
+        }
     }
     
 }

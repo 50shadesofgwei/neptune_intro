@@ -3,6 +3,7 @@ use utils::global_types::{TEST_RFQ_OBJECT, TxData};
 use crate::request_for_quote::zero_ex::get_request_from_asset_data::ZeroExQuoter;
 
 mod request_for_quote;
+mod transaction_execution;
 mod utils;
 
 #[tokio::main]

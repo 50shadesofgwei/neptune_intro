@@ -1,4 +1,4 @@
-use std::sync::mpsc::Sender;
+use std::sync::mpsc::{Sender, self};
 use crate::TxData;
 
 pub struct Emitter {
@@ -13,4 +13,9 @@ impl Emitter {
     pub fn emit_event(&self, event: TxData) {
         self.event_sender.send(event).expect("Failed to send event");
     }
+}
+
+pub fn get_emitter() -> Sender<TxData> {
+    let (sender, _receiver) = mpsc::channel::<TxData>();
+    sender
 }

@@ -1,11 +1,12 @@
 use reqwest::{self, Client, Response};
 use serde::Deserialize;
 use std::error::Error;
+use std::sync::mpsc::Sender;
 use dotenv::dotenv;
-use std::env;
 use crate::utils::api_error_handling_utils::{is_valid_api_response, ApiError};
 use crate::utils::global_types::{AssetToSellData, TxData};
-use crate::utils::global_utils::deserialize_json_response;
+use crate::utils::global_utils::{deserialize_json_response, get_environment_variable, EnvironmentVariable};
+use crate::utils::events::emitter::{get_emitter};
 use super::{zero_ex_utils::ZERO_EX_API_ADDRESS, zero_ex_types::ZeroExAPIResponseData};
 
 #[derive(Debug, Deserialize)]
@@ -15,17 +16,23 @@ pub struct ZeroExAPIError {
 
 pub struct ZeroExQuoter {
     api_key: String,
+    emitter: Sender<TxData>
 }
 
 impl ZeroExQuoter {
     pub fn new() -> Result<Self, Box<dyn Error>> {
         dotenv().ok();
-        let api_key: String = env::var("ZERO_EX_API_KEY")
-        .map_err(|e| format!("Couldn't read ZERO_EX_API_KEY from .env ({})", e))?;
+        let api_key: String = get_environment_variable(EnvironmentVariable::ZeroExApiKey)?;
+        let emitter: Sender<TxData> = get_emitter();
 
         Ok(Self {
             api_key,
+            emitter
         })
+    }
+
+    pub fn emit_tx_data(&self, data_to_emit: TxData) -> Result<(), Box<dyn Error>> {
+        self.emitter.send(data_to_emit).map_err(|e| e.into())
     }
 
     pub async fn get_tx_data_from_asset_data(

@@ -7,7 +7,7 @@ pub struct ZeroExAPIResponseData {
     sell_token_address: String,
     sell_amount: String,
     buy_amount: String,
-    to: String,
-    value: String,
-    data: String,
+    pub to: String,
+    pub value: String,
+    pub data: String,
 }
